@@ -1,0 +1,28 @@
+# Archivos a ignorar al construir imagen Docker
+.git
+.gitignore
+README.md
+.env
+.env.local
+.venv
+venv/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache
+.coverage
+.mypy_cache
+.DS_Store
+Thumbs.db
+
+# Archivos de desarrollo
+*.log
+uploads/*
+!uploads/.gitkeep
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore

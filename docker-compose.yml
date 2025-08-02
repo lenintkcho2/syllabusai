@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # Base de datos PostgreSQL
+  db:
+    image: postgres:16
+    container_name: syllabusai_db
+    environment:
+      POSTGRES_DB: syllabusai_db
+      POSTGRES_USER: syllabusai_user
+      POSTGRES_PASSWORD: syllabusai_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - syllabusai_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U syllabusai_user -d syllabusai_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Aplicación FastAPI
+  api:
+    build: .
+    container_name: syllabusai_api
+    environment:
+      DATABASE_URL: postgresql://syllabusai_user:syllabusai_password@db:5432/syllabusai_db
+      DEBUG: "True"
+      SUPABASE_URL: placeholder
+      SUPABASE_KEY: placeholder
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-placeholder}
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-placeholder}
+      PINECONE_ENVIRONMENT: ${PINECONE_ENVIRONMENT:-placeholder}
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./app:/app/app  # Para desarrollo (hot reload)
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - syllabusai_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # pgAdmin (opcional - para administrar BD)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: syllabusai_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@syllabusai.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    networks:
+      - syllabusai_network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+# Volúmenes para persistencia
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+# Red para comunicación entre servicios
+networks:
+  syllabusai_network:
+    driver: bridge
